@@ -2,10 +2,10 @@ package main
 
 import (
 	"log"
-	"internal/server"
+	"spotfinder/internal/server"
 )
 
 func main() {
-	srv := server.NewHTTPServer(":8080") 
+	srv := server.NewHTTPServer("0.0.0.0:3000") 
 	log.Fatal(srv.ListenAndServe())
 }

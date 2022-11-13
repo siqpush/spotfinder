@@ -1,11 +1,10 @@
-package main
+package spot
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
+	"net/http"
 	"strconv"
-	"os"
 	"github.com/SebastiaanKlippert/go-soda"
 )
 
@@ -93,8 +92,8 @@ func getjson(sodareq *soda.GetRequest) []map[string]interface{}{
 	return results
 }
 
-func main() {
-	origin := get_lat_long(os.Args[1],os.Args[2])
+func FindSpots(lat string, long string, w *http.ResponseWriter) {
+	origin := get_lat_long(lat,long)
 
 	ch := make(chan uint8,20)
 	for _, space := range get_status() {
@@ -102,7 +101,7 @@ func main() {
 		s.id = space["spaceid"].(string)
 		s.status = space["occupancystate"].(string)
 
-		go func(s spot, ch chan uint8) {
+		go func(s spot, ch chan uint8, w http.ResponseWriter) {
 
 			results := get_loc(s.id)
 			for _, result := range results {
@@ -113,12 +112,13 @@ func main() {
 			}
 			if s.close_to_loc(origin) {
 				if s.status == "VACANT" {
-					fmt.Println(s.blockface)
+					w.Write([]byte(s.blockface))
+					w.Write("\n")
 				}
 			}
 			
 			<- ch
-		}(*s, ch)
+		}(*s, ch, *w)
 		ch <- 1
 	}
 }
