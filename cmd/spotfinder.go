@@ -113,7 +113,7 @@ func FindSpots(lat string, long string, w *http.ResponseWriter) {
 			if s.close_to_loc(origin) {
 				if s.status == "VACANT" {
 					w.Write([]byte(s.blockface))
-					w.Write("\n")
+					w.Write([]byte("\n"))
 				}
 			}
 			
