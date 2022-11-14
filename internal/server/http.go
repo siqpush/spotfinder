@@ -13,7 +13,7 @@ type httpServer struct {
 }
 
 func NewHTTPServer(addr string) *http.Server {
-
+	fmt.Println("creating server...")
 	httpsrv := newHTTPServer()
 	r := mux.NewRouter()
 
@@ -32,9 +32,7 @@ func newHTTPServer() *httpServer {
 //anytime something is fetched **GET** 
 func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
 	lat := r.URL.Query().Get("lat")
-	fmt.Println(lat)
 	long := r.URL.Query().Get("long")
-
 	spot.FindSpots(lat, long, &w)
 
 }
