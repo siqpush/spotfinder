@@ -31,9 +31,9 @@ func newHTTPServer() *httpServer {
 
 //anytime something is fetched **GET** 
 func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("request recieved")
 	lat := r.URL.Query().Get("lat")
 	long := r.URL.Query().Get("long")
 	spot.FindSpots(lat, long, &w)
-
 }
 
