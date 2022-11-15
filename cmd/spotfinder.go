@@ -5,7 +5,9 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"github.com/SebastiaanKlippert/go-soda"
+	"fmt"
 )
 
 
@@ -25,6 +27,11 @@ type spot struct {
 	status string ""
 	blockface string ""
 	loc geo
+}
+
+type block struct {
+	blocknum uint16
+	st string
 }
 
 func get_lat_long(lat string, long string) geo {
@@ -92,16 +99,22 @@ func getjson(sodareq *soda.GetRequest) []map[string]interface{}{
 	return results
 }
 
+func sendresults(b block, openspots uint16, w http.ResponseWriter) {
+	w.Write([]byte(fmt.Sprintln(b," -> ", openspots, " spots available")))
+}
+
 func FindSpots(lat string, long string, w *http.ResponseWriter) {
 	origin := get_lat_long(lat,long)
 
 	ch := make(chan uint8,20)
+	bl_ch := make(chan string,1000)
+
 	for _, space := range get_status() {
 		s := new(spot)
 		s.id = space["spaceid"].(string)
 		s.status = space["occupancystate"].(string)
 
-		go func(s spot, ch chan uint8, w http.ResponseWriter) {
+		go func(s spot, ch chan uint8, bl_ch chan string, w http.ResponseWriter) {
 
 			results := get_loc(s.id)
 			for _, result := range results {
@@ -112,13 +125,48 @@ func FindSpots(lat string, long string, w *http.ResponseWriter) {
 			}
 			if s.close_to_loc(origin) {
 				if s.status == "VACANT" {
-					w.Write([]byte(s.blockface))
-					w.Write([]byte("..."))
+					bl_ch <- s.blockface
 				}
 			}
 			
 			<- ch
-		}(*s, ch, *w)
+		}(*s, ch, bl_ch, *w)
 		ch <- 1
 	}
+	
+	blks := make(map[block]uint16)
+	breakout := false
+	for {
+
+		
+
+		select {
+			case blk := <-bl_ch:
+				blk_parts := strings.Split(blk, " ")
+				var b block
+				num, err := strconv.ParseInt(blk_parts[0],10, 16)
+				if err != nil {
+					continue
+				} else {
+					b.blocknum = uint16(num)
+				}
+
+				b.st = strings.Join(blk_parts[1:]," ")
+
+				if _, ok := blks[b]; ok {
+					blks[b]++
+				} else {
+					blks[b] = 1
+				}	
+			default:
+				breakout = true
+			}		
+		if breakout {
+			break
+		}
+	}
+	for i, j := range blks {
+		sendresults(i, j, *w)
+	}
+
 }

@@ -1,19 +1,15 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 	"spotfinder/cmd"
-
+	"regexp"
 	"github.com/gorilla/mux"
 )
 
-type httpServer struct { 
-	req []byte
-}
+type httpServer struct {}
 
 func NewHTTPServer(addr string) *http.Server {
-	fmt.Println("creating server...")
 	httpsrv := newHTTPServer()
 	r := mux.NewRouter()
 
@@ -31,9 +27,23 @@ func newHTTPServer() *httpServer {
 
 //anytime something is fetched **GET** 
 func (s *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("request recieved")
+
 	lat := r.URL.Query().Get("lat")
+	lat_match, err := regexp.MatchString("[0-9.-]{1,}", lat)
+	if err != nil {
+		return
+	}
+
 	long := r.URL.Query().Get("long")
-	spot.FindSpots(lat, long, &w)
+	long_match, err := regexp.MatchString("[0-9.-]{1,}", long)
+	if err != nil {
+		return
+	}
+
+	if lat_match && long_match {
+		spot.FindSpots(lat, long, &w)
+	} else {
+		w.Write([]byte("Bad Latitude and Longitude, please try again..."))
+	}
 }
 
